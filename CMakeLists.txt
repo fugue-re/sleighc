@@ -4,9 +4,9 @@ project(sleigh_compiler CXX)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(BISON REQUIRED)
-find_package(FLEX REQUIRED)
-find_package(ZLIB REQUIRED)
+find_package(BISON 3.8 REQUIRED)
+find_package(FLEX 2.6 REQUIRED)
+find_package(ZLIB 1.2.12 REQUIRED)
 
 set(SLEIGH_SOURCES
   src/marshal.cc
@@ -41,7 +41,7 @@ FLEX_TARGET(SlghScanner src/slghscan.l ${PARSER_OUTPUT_DIR}/slghscan.cc COMPILE_
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DYYDEBUG")
 
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-  add_compile_options(-Wall -Wno-sign-compare)
+  add_compile_options(-Wall -Wno-sign-compare -Wno-unneeded-internal-declaration -Wno-unused-but-set-variable)
 endif()
 
 add_executable(sleighc
