@@ -34,6 +34,10 @@
             name = "sleighc";
             version = "11.3";
             src = self;
+            cmakeFlags = [
+              "-DCMAKE_INSTALL_LIBDIR=lib"
+              "-DBUILD_DECOMPILER=ON"
+            ];
             buildInputs = requiredPkgs pkgs;
           };
         }
@@ -47,6 +51,10 @@
           default = pkgs.mkShell {
             name = "sleighc-shell";
             buildInputs = requiredPkgs pkgs;
+            cmakeFlags = [
+              "-DCMAKE_INSTALL_LIBDIR=lib"
+              "-DBUILD_DECOMPILER=ON"
+            ];
             shellHook = ''
               export PATH=${self.packages.${system}.default}/bin:$PATH
             '';
