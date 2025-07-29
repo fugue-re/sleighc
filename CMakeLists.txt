@@ -105,7 +105,9 @@ set(DECOMPILER_SOURCES
   src/sleighbase.cc
   src/slghpatexpress.cc
   src/slghpattern.cc
+  src/slaformat.cc
   src/pcodecompile.cc
+  src/compression.cc
 )
 
 set(PARSER_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
@@ -141,6 +143,8 @@ if(BUILD_DECOMPILER)
     YYDEBUG=1
     YYERROR_VERBOSE
   )
+
+  target_link_libraries(decomp PUBLIC ZLIB::ZLIB)
 
   install(TARGETS decomp
     RUNTIME DESTINATION lib
