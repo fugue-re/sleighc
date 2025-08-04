@@ -108,6 +108,8 @@ set(DECOMPILER_SOURCES
   src/slaformat.cc
   src/pcodecompile.cc
   src/compression.cc
+  src/multiprecision.cc
+  src/constseq.cc
 )
 
 set(PARSER_OUTPUT_DIR ${CMAKE_CURRENT_BINARY_DIR}/generated)
