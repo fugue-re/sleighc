@@ -118,6 +118,7 @@ file(MAKE_DIRECTORY ${PARSER_OUTPUT_DIR})
 BISON_TARGET(SlghParser src/slghparse.y ${PARSER_OUTPUT_DIR}/slghparse.cc COMPILE_FLAGS "-l -d")
 BISON_TARGET(XmlParser src/xml.y ${PARSER_OUTPUT_DIR}/xml.cc COMPILE_FLAGS "-l" DEFINES_FILE ${PARSER_OUTPUT_DIR}/xml.unused.hh)
 BISON_TARGET(PcodeParser src/pcodeparse.y ${PARSER_OUTPUT_DIR}/pcodeparse.cc COMPILE_FLAGS "-l" DEFINES_FILE ${PARSER_OUTPUT_DIR}/pcodeparse.unused.hh)
+BISON_TARGET(GrammarParser src/grammar.y ${PARSER_OUTPUT_DIR}/grammar.cc COMPILE_FLAGS "-l" DEFINES_FILE ${PARSER_OUTPUT_DIR}/grammar.unused.hh)
 
 FLEX_TARGET(SlghScanner src/slghscan.l ${PARSER_OUTPUT_DIR}/slghscan.cc COMPILE_FLAGS "-L --nounput")
 
@@ -133,6 +134,7 @@ if(BUILD_DECOMPILER)
     ${BISON_SlghParser_OUTPUTS}
     ${BISON_XmlParser_OUTPUTS}
     ${BISON_PcodeParser_OUTPUTS}
+    ${BISON_GrammarParser_OUTPUTS}
     ${FLEX_SlghScanner_OUTPUTS}
   )
 
