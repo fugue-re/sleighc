@@ -234,6 +234,7 @@ public:
   sub_metatype getSubMeta(void) const { return submeta; }	///< Get the \b sub-metatype
   uint8 getId(void) const { return id; }			///< Get the type id
   uint8 getUnsizedId(void) const;				///< Get the type id, without variable length size adjustment
+  uint4 getFlags(void) const { return flags; }  ///< Get the type flags
   int4 getSize(void) const { return size; }			///< Get the type size
   int4 getAlignSize(void) const { return alignSize; }		///< Get size rounded up to multiple of alignment
   int4 getAlignment(void) const { return alignment; }		///< Get the expected byte alignment
