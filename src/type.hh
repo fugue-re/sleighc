@@ -780,7 +780,6 @@ class TypeFactory {
   list<Datatype *> incompleteTypedef;	///< Incomplete data-types defined as a \e typedef
   Datatype *findNoName(Datatype &ct);	///< Find data-type (in this container) by function
   void insert(Datatype *newtype);	///< Insert pointer into the cross-reference sets
-  Datatype *findAdd(Datatype &ct);	///< Find data-type in this container or add it
   void orderRecurse(vector<Datatype *> &deporder,DatatypeSet &mark,Datatype *ct) const;	///< Write out dependency list
   void decodeAlignmentMap(Decoder &decoder);		///< Parse a \<size_alignment_map> element
   void setDefaultAlignmentMap(void);			///< Provide default alignments for data-types
@@ -797,10 +796,8 @@ class TypeFactory {
   void recalcPointerSubmeta(Datatype *base,sub_metatype sub);	///< Recalculate submeta for pointers to given base data-type
   void insertWarning(Datatype *dt,string warn);	///< Register a new data-type warning with \b this factory
   void removeWarning(Datatype *dt);		///< Remove the warning associated with the given data-type
-  void resolveIncompleteTypedefs(void);		///< Redefine incomplete typedefs of data-types that are now complete
 protected:
   Architecture *glb;		///< The Architecture object that owns this TypeFactory
-  Datatype *findByIdLocal(const string &nm,uint8 id) const;	///< Search locally by name and id
   virtual Datatype *findById(const string &n,uint8 id,int4 sz);		///< Search by \e name and/or \e id
 public:
   TypeFactory(Architecture *g);	///< Construct a factory
@@ -817,7 +814,9 @@ public:
   int4 getSizeOfPointer(void) const { return sizeOfPointer; }	///< Get the size of pointers
   int4 getSizeOfAltPointer(void) const { return sizeOfAltPointer; }	///< Get size of alternate pointers (or 0)
   Architecture *getArch(void) const { return glb; }	///< Get the Architecture object
+  Datatype *findAdd(Datatype &ct);	///< Find data-type in this container or add it
   Datatype *findByName(const string &n);		///< Return type of given name
+  Datatype *findByIdLocal(const string &nm,uint8 id) const;	///< Search locally by name and id
   Datatype *setName(Datatype *ct,const string &n); 	///< Set the given types name
   void setDisplayFormat(Datatype *ct,uint4 format);	///< Set the display format associated with the given data-type
   void setFields(const vector<TypeField> &fd,TypeStruct *ot,int4 newSize,int4 newAlign,uint4 flags);	///< Set fields on a TypeStruct
@@ -863,6 +862,7 @@ public:
   void cacheCoreTypes(void);				///< Cache common types
   list<DatatypeWarning>::const_iterator beginWarnings(void) const { return warnings.begin(); }	///< Start of data-type warnings
   list<DatatypeWarning>::const_iterator endWarnings(void) const { return warnings.end(); }	///< End of data-type warnings
+  void resolveIncompleteTypedefs(void);		///< Redefine incomplete typedefs of data-types that are now complete
 #ifdef TYPEPROP_DEBUG
   static bool propagatedbg_on;		///< If \b true, display data-type propagation trace
 #endif
