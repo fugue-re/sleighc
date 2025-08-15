@@ -1,0 +1,22 @@
+diff --git a/src/type.hh b/src/type.hh
+index 5baae16..472c145 100644
+--- a/src/type.hh
++++ b/src/type.hh
+@@ -524,6 +524,8 @@ public:
+   }
+   vector<TypeField>::const_iterator beginField(void) const { return field.begin(); }	///< Beginning of fields
+   vector<TypeField>::const_iterator endField(void) const { return field.end(); }	///< End of fields
++  const vector<TypeField> &getFields(void) const { return field; } ///< Get fields
++  vector<TypeField> &getFields(void) { return field; } ///< Get fields with mutable access
+   virtual const TypeField *findTruncation(int8 off,int4 sz,const PcodeOp *op,int4 slot,int8 &newoff) const;
+   virtual Datatype *getSubType(int8 off,int8 *newoff) const;
+   virtual Datatype *nearestArrayedComponentForward(int8 off,int8 *newoff,int8 *elSize) const;
+@@ -562,6 +564,8 @@ public:
+     id = hashName(nm);
+   }
+   const TypeField *getField(int4 i) const { return &field[i]; }	///< Get the i-th field of the union
++  const vector<TypeField> &getFields(void) const { return field; } ///< Get fields
++  vector<TypeField> &getFields(void) { return field; } ///< Get fields with mutable access
+   virtual const TypeField *findTruncation(int8 offset,int4 sz,const PcodeOp *op,int4 slot,int8 &newoff) const;
+   //  virtual Datatype *getSubType(int8 off,int8 *newoff) const;
+   virtual int4 numDepend(void) const { return field.size(); }
