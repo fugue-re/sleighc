@@ -510,7 +510,6 @@ class TypeStruct : public Datatype {
 protected:
   friend class TypeFactory;
   vector<TypeField> field;			///< The list of fields
-  void setFields(const vector<TypeField> &fd,int4 fixedSize,int4 fixedAlign);	///< Establish fields for \b this
   int4 getFieldIter(int4 off) const;		///< Get index into field list
   int4 getLowerBoundField(int4 off) const;	///< Get index of last field before or equal to given offset
   string decodeFields(Decoder &decoder,TypeFactory &typegrp);	///< Restore fields from a stream
@@ -527,6 +526,7 @@ public:
   vector<TypeField>::const_iterator endField(void) const { return field.end(); }	///< End of fields
   const vector<TypeField> &getFields(void) const { return field; } ///< Get fields
   vector<TypeField> &getFields(void) { return field; } ///< Get fields with mutable access
+  void setFields(const vector<TypeField> &fd,int4 fixedSize,int4 fixedAlign);	///< Establish fields for \b this
   virtual const TypeField *findTruncation(int8 off,int4 sz,const PcodeOp *op,int4 slot,int8 &newoff) const;
   virtual Datatype *getSubType(int8 off,int8 *newoff) const;
   virtual Datatype *nearestArrayedComponentForward(int8 off,int8 *newoff,int8 *elSize) const;
@@ -553,7 +553,6 @@ class TypeUnion : public Datatype {
 protected:
   friend class TypeFactory;
   vector<TypeField> field;			///< The list of fields
-  void setFields(const vector<TypeField> &fd,int4 newSize,int4 newAlign);	///< Establish fields for \b this
   void decodeFields(Decoder &decoder,TypeFactory &typegrp);	///< Restore fields from a stream
 public:
   TypeUnion(const TypeUnion &op);	///< Construct from another TypeUnion
@@ -567,6 +566,7 @@ public:
   const TypeField *getField(int4 i) const { return &field[i]; }	///< Get the i-th field of the union
   const vector<TypeField> &getFields(void) const { return field; } ///< Get fields
   vector<TypeField> &getFields(void) { return field; } ///< Get fields with mutable access
+  void setFields(const vector<TypeField> &fd,int4 newSize,int4 newAlign);	///< Establish fields for \b this
   virtual const TypeField *findTruncation(int8 offset,int4 sz,const PcodeOp *op,int4 slot,int8 &newoff) const;
   //  virtual Datatype *getSubType(int8 off,int8 *newoff) const;
   virtual int4 numDepend(void) const { return field.size(); }
