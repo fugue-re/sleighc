@@ -482,7 +482,6 @@ public:
 protected:
   friend class TypeFactory;
   map<uintb,string> namemap;	///< Map from integer to name
-  void setNameMap(const map<uintb,string> &nmap) { namemap = nmap; }	///< Establish the value -> name map
   string decode(Decoder &decoder,TypeFactory &typegrp);	///< Restore \b this enum data-type from a stream
 public:
   /// Construct from another TypeEnum
@@ -501,6 +500,7 @@ public:
   virtual int4 compareDependency(const Datatype &op) const;
   virtual Datatype *clone(void) const { return new TypeEnum(*this); }
   virtual void encode(Encoder &encoder) const;
+  void setNameMap(const map<uintb,string> &nmap) { namemap = nmap; }	///< Establish the value -> name map
   static void assignValues(map<uintb,string> &nmap,const vector<string> &namelist,vector<uintb> &vallist,
 			   const vector<bool> &assignlist,const TypeEnum *te);
 };
