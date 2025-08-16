@@ -199,7 +199,6 @@ protected:
   void decodeBasic(Decoder &decoder);	///< Recover basic data-type properties
   void encodeBasic(type_metatype meta,int4 align,Encoder &encoder) const;	///< Encode basic data-type properties
   void encodeTypedef(Encoder &encoder) const;	///< Encode \b this as a \e typedef element to a stream
-  void markComplete(void) { flags &= ~(uint4)type_incomplete; }		///< Mark \b this data-type as completely defined
   void setDisplayFormat(uint4 format);		///< Set a specific display format
   virtual Datatype *clone(void) const=0;	///< Clone the data-type
 protected:
@@ -226,6 +225,7 @@ public:
   bool isFormalPointerRel(void) const { return (flags & (is_ptrrel | has_stripped))==is_ptrrel; }	///< Is \b this a non-ephemeral TypePointerRel
   bool hasStripped(void) const { return (flags & has_stripped)!=0; }	///< Return \b true if \b this has a stripped form
   bool isIncomplete(void) const { return (flags & type_incomplete)!=0; }	///< Is \b this an incompletely defined data-type
+  void markComplete(void) { flags &= ~(uint4)type_incomplete; }		///< Mark \b this data-type as completely defined
   bool needsResolution(void) const { return (flags & needs_resolution)!=0; }	///< Is \b this a union or a pointer to union
   bool hasWarning(void) const { return (flags & warning_issued)!=0; }	///< Has a \e warning been issued about \b this data-type
   uint4 getInheritable(void) const { return (flags & coretype); }	///< Get properties pointers inherit
