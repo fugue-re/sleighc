@@ -503,6 +503,7 @@ public:
   virtual int4 compareDependency(const Datatype &op) const;
   virtual Datatype *clone(void) const { return new TypeEnum(*this); }
   virtual void encode(Encoder &encoder) const;
+  const map<uintb,string> &getNameMap(void) const { return namemap; } ///< Get the value -> name map
   void setNameMap(const map<uintb,string> &nmap) { namemap = nmap; }	///< Establish the value -> name map
   static void assignValues(map<uintb,string> &nmap,const vector<string> &namelist,vector<uintb> &vallist,
 			   const vector<bool> &assignlist,const TypeEnum *te);
