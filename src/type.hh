@@ -491,7 +491,10 @@ public:
     flags |= enumtype; metatype = (m==TYPE_ENUM_INT) ? TYPE_INT : TYPE_UINT; }
   /// Construct from a size, meta-type, and name
   TypeEnum(int4 s,type_metatype m,const string &nm) : TypeBase(s,m,nm) {
-    flags |= enumtype; metatype = (m==TYPE_ENUM_INT) ? TYPE_INT : TYPE_UINT; }
+    flags |= enumtype;
+    metatype = (m==TYPE_ENUM_INT) ? TYPE_INT : TYPE_UINT;
+    id = hashName(nm);
+  }
   map<uintb,string>::const_iterator beginEnum(void) const { return namemap.begin(); }	///< Beginning of name map
   map<uintb,string>::const_iterator endEnum(void) const { return namemap.end(); }	///< End of name map
   virtual bool hasNamedValue(uintb val) const;			///< Does \b this have a (single) name for the given value
