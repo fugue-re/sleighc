@@ -192,15 +192,18 @@ protected:
   string name;			///< Name of type
   string displayName;		///< Name to display in output
   type_metatype metatype;	///< Meta-type - type disregarding size
-  sub_metatype submeta;		///< Sub-type of of the meta-type, for comparisons
+  sub_metatype submeta;		///< Sub-type of the meta-type, for comparisons
   Datatype *typedefImm;		///< The immediate data-type being typedefed by \e this
   int4 alignment;		///< Byte alignment expected for \b this data-type in addressable memory
   int4 alignSize;		///< Size of data-type rounded up to a multiple of \b alignment
   void decodeBasic(Decoder &decoder);	///< Recover basic data-type properties
   void encodeBasic(type_metatype meta,int4 align,Encoder &encoder) const;	///< Encode basic data-type properties
   void encodeTypedef(Encoder &encoder) const;	///< Encode \b this as a \e typedef element to a stream
+  void markComplete(void) { flags &= ~(uint4)type_incomplete; }		///< Mark \b this data-type as completely defined
   void setDisplayFormat(uint4 format);		///< Set a specific display format
   virtual Datatype *clone(void) const=0;	///< Clone the data-type
+  static uint8 hashName(const string &nm);	///< Produce a data-type id by hashing the type name
+  static uint8 hashSize(uint8 id,int4 size);	///< Reversibly hash size into id
 protected:
   static int4 calcAlignSize(int4 sz,int4 align);	///< Calculate aligned size, given size and alignment of data-type
 public:
@@ -225,7 +228,6 @@ public:
   bool isFormalPointerRel(void) const { return (flags & (is_ptrrel | has_stripped))==is_ptrrel; }	///< Is \b this a non-ephemeral TypePointerRel
   bool hasStripped(void) const { return (flags & has_stripped)!=0; }	///< Return \b true if \b this has a stripped form
   bool isIncomplete(void) const { return (flags & type_incomplete)!=0; }	///< Is \b this an incompletely defined data-type
-  void markComplete(void) { flags &= ~(uint4)type_incomplete; }		///< Mark \b this data-type as completely defined
   bool needsResolution(void) const { return (flags & needs_resolution)!=0; }	///< Is \b this a union or a pointer to union
   bool hasWarning(void) const { return (flags & warning_issued)!=0; }	///< Has a \e warning been issued about \b this data-type
   uint4 getInheritable(void) const { return (flags & coretype); }	///< Get properties pointers inherit
@@ -234,7 +236,6 @@ public:
   sub_metatype getSubMeta(void) const { return submeta; }	///< Get the \b sub-metatype
   uint8 getId(void) const { return id; }			///< Get the type id
   uint8 getUnsizedId(void) const;				///< Get the type id, without variable length size adjustment
-  uint4 getFlags(void) const { return flags; }  ///< Get the type flags
   int4 getSize(void) const { return size; }			///< Get the type size
   int4 getAlignSize(void) const { return alignSize; }		///< Get size rounded up to multiple of alignment
   int4 getAlignment(void) const { return alignment; }		///< Get the expected byte alignment
@@ -286,8 +287,6 @@ public:
   bool isPrimitiveWhole(void) const;		///< Is \b this made up of a single primitive
   static uint4 encodeIntegerFormat(const string &val);
   static string decodeIntegerFormat(uint4 val);
-  static uint8 hashName(const string &nm);	///< Produce a data-type id by hashing the type name
-  static uint8 hashSize(uint8 id,int4 size);	///< Reversibly hash size into id
 };
 
 /// \brief A field within a structure or union
@@ -482,6 +481,7 @@ public:
 protected:
   friend class TypeFactory;
   map<uintb,string> namemap;	///< Map from integer to name
+  void setNameMap(const map<uintb,string> &nmap) { namemap = nmap; }	///< Establish the value -> name map
   string decode(Decoder &decoder,TypeFactory &typegrp);	///< Restore \b this enum data-type from a stream
 public:
   /// Construct from another TypeEnum
@@ -491,10 +491,7 @@ public:
     flags |= enumtype; metatype = (m==TYPE_ENUM_INT) ? TYPE_INT : TYPE_UINT; }
   /// Construct from a size, meta-type, and name
   TypeEnum(int4 s,type_metatype m,const string &nm) : TypeBase(s,m,nm) {
-    flags |= enumtype;
-    metatype = (m==TYPE_ENUM_INT) ? TYPE_INT : TYPE_UINT;
-    id = hashName(nm);
-  }
+    flags |= enumtype; metatype = (m==TYPE_ENUM_INT) ? TYPE_INT : TYPE_UINT; }
   map<uintb,string>::const_iterator beginEnum(void) const { return namemap.begin(); }	///< Beginning of name map
   map<uintb,string>::const_iterator endEnum(void) const { return namemap.end(); }	///< End of name map
   virtual bool hasNamedValue(uintb val) const;			///< Does \b this have a (single) name for the given value
@@ -503,8 +500,6 @@ public:
   virtual int4 compareDependency(const Datatype &op) const;
   virtual Datatype *clone(void) const { return new TypeEnum(*this); }
   virtual void encode(Encoder &encoder) const;
-  const map<uintb,string> &getNameMap(void) const { return namemap; } ///< Get the value -> name map
-  void setNameMap(const map<uintb,string> &nmap) { namemap = nmap; }	///< Establish the value -> name map
   static void assignValues(map<uintb,string> &nmap,const vector<string> &namelist,vector<uintb> &vallist,
 			   const vector<bool> &assignlist,const TypeEnum *te);
 };
@@ -514,23 +509,15 @@ class TypeStruct : public Datatype {
 protected:
   friend class TypeFactory;
   vector<TypeField> field;			///< The list of fields
+  void setFields(const vector<TypeField> &fd,int4 fixedSize,int4 fixedAlign);	///< Establish fields for \b this
   int4 getFieldIter(int4 off) const;		///< Get index into field list
   int4 getLowerBoundField(int4 off) const;	///< Get index of last field before or equal to given offset
   string decodeFields(Decoder &decoder,TypeFactory &typegrp);	///< Restore fields from a stream
 public:
   TypeStruct(const TypeStruct &op);	///< Construct from another TypeStruct
   TypeStruct(void) : Datatype(0,-1,TYPE_STRUCT) { flags |= type_incomplete; }	///< Construct incomplete/empty TypeStruct
-  TypeStruct(const std::string& nm) : Datatype(0,-1,TYPE_STRUCT) {	///< Construct incomplete TypeStruct with a name
-    name = nm;
-    displayName = nm;
-    flags |= type_incomplete;
-    id = hashName(nm);
-  }
   vector<TypeField>::const_iterator beginField(void) const { return field.begin(); }	///< Beginning of fields
   vector<TypeField>::const_iterator endField(void) const { return field.end(); }	///< End of fields
-  const vector<TypeField> &getFields(void) const { return field; } ///< Get fields
-  vector<TypeField> &getFields(void) { return field; } ///< Get fields with mutable access
-  void setFields(const vector<TypeField> &fd,int4 fixedSize,int4 fixedAlign);	///< Establish fields for \b this
   virtual const TypeField *findTruncation(int8 off,int4 sz,const PcodeOp *op,int4 slot,int8 &newoff) const;
   virtual Datatype *getSubType(int8 off,int8 *newoff) const;
   virtual Datatype *nearestArrayedComponentForward(int8 off,int8 *newoff,int8 *elSize) const;
@@ -557,20 +544,12 @@ class TypeUnion : public Datatype {
 protected:
   friend class TypeFactory;
   vector<TypeField> field;			///< The list of fields
+  void setFields(const vector<TypeField> &fd,int4 newSize,int4 newAlign);	///< Establish fields for \b this
   void decodeFields(Decoder &decoder,TypeFactory &typegrp);	///< Restore fields from a stream
 public:
   TypeUnion(const TypeUnion &op);	///< Construct from another TypeUnion
   TypeUnion(void) : Datatype(0,-1,TYPE_UNION) { flags |= (type_incomplete | needs_resolution); }	///< Construct incomplete TypeUnion
-  TypeUnion(const std::string& nm) : Datatype(0,-1,TYPE_UNION) {	///< Construct incomplete TypeUnion with a name
-    name = nm;
-    displayName = nm;
-    flags |= type_incomplete | needs_resolution;
-    id = hashName(nm);
-  }
   const TypeField *getField(int4 i) const { return &field[i]; }	///< Get the i-th field of the union
-  const vector<TypeField> &getFields(void) const { return field; } ///< Get fields
-  vector<TypeField> &getFields(void) { return field; } ///< Get fields with mutable access
-  void setFields(const vector<TypeField> &fd,int4 newSize,int4 newAlign);	///< Establish fields for \b this
   virtual const TypeField *findTruncation(int8 offset,int4 sz,const PcodeOp *op,int4 slot,int8 &newoff) const;
   //  virtual Datatype *getSubType(int8 off,int8 *newoff) const;
   virtual int4 numDepend(void) const { return field.size(); }
@@ -716,24 +695,15 @@ protected:
   friend class TypeFactory;
   FuncProto *proto;		///< If non-null, this describes the prototype of the underlying function
   TypeFactory *factory;		///< Factory owning \b this
+  void setPrototype(TypeFactory *tfact,const PrototypePieces &sig,Datatype *voidtype);	///< Establish a function pointer
   void setPrototype(TypeFactory *typegrp,const FuncProto *fp);	///< Set a particular function prototype on \b this
   void decodeStub(Decoder &decoder);		///< Restore stub of data-type without the full prototype
   void decodePrototype(Decoder &decoder,bool isConstructor,bool isDestructor,TypeFactory &typegrp);	///< Restore any prototype description
 public:
   TypeCode(const TypeCode &op);		///< Construct from another TypeCode
   TypeCode(void);			///< Construct an incomplete TypeCode
-  TypeCode(const std::string& nm) : Datatype(1,1,TYPE_CODE) {	///< Construct incomplete TypeCode with a name
-    name = nm;
-    displayName = nm;
-    flags |= type_incomplete | variable_length;
-    proto = nullptr;
-    factory = nullptr;
-    id = hashName(nm);
-  }
   int4 compareBasic(const TypeCode *op) const;	///< Compare surface characteristics of two TypeCodes
   const FuncProto *getPrototype(void) const { return proto; }	///< Get the function prototype
-  FuncProto *getPrototype(void) { return proto; }	///< Get the function prototype
-  void setPrototype(TypeFactory *tfact,const PrototypePieces &sig,Datatype *voidtype);	///< Establish a function pointer
   virtual ~TypeCode(void);
   virtual void printRaw(ostream &s) const;
   virtual Datatype *getSubType(int8 off,int8 *newoff) const;
@@ -810,6 +780,7 @@ class TypeFactory {
   list<Datatype *> incompleteTypedef;	///< Incomplete data-types defined as a \e typedef
   Datatype *findNoName(Datatype &ct);	///< Find data-type (in this container) by function
   void insert(Datatype *newtype);	///< Insert pointer into the cross-reference sets
+  Datatype *findAdd(Datatype &ct);	///< Find data-type in this container or add it
   void orderRecurse(vector<Datatype *> &deporder,DatatypeSet &mark,Datatype *ct) const;	///< Write out dependency list
   void decodeAlignmentMap(Decoder &decoder);		///< Parse a \<size_alignment_map> element
   void setDefaultAlignmentMap(void);			///< Provide default alignments for data-types
@@ -826,8 +797,10 @@ class TypeFactory {
   void recalcPointerSubmeta(Datatype *base,sub_metatype sub);	///< Recalculate submeta for pointers to given base data-type
   void insertWarning(Datatype *dt,string warn);	///< Register a new data-type warning with \b this factory
   void removeWarning(Datatype *dt);		///< Remove the warning associated with the given data-type
+  void resolveIncompleteTypedefs(void);		///< Redefine incomplete typedefs of data-types that are now complete
 protected:
   Architecture *glb;		///< The Architecture object that owns this TypeFactory
+  Datatype *findByIdLocal(const string &nm,uint8 id) const;	///< Search locally by name and id
   virtual Datatype *findById(const string &n,uint8 id,int4 sz);		///< Search by \e name and/or \e id
 public:
   TypeFactory(Architecture *g);	///< Construct a factory
@@ -844,9 +817,7 @@ public:
   int4 getSizeOfPointer(void) const { return sizeOfPointer; }	///< Get the size of pointers
   int4 getSizeOfAltPointer(void) const { return sizeOfAltPointer; }	///< Get size of alternate pointers (or 0)
   Architecture *getArch(void) const { return glb; }	///< Get the Architecture object
-  Datatype *findAdd(Datatype &ct);	///< Find data-type in this container or add it
   Datatype *findByName(const string &n);		///< Return type of given name
-  Datatype *findByIdLocal(const string &nm,uint8 id) const;	///< Search locally by name and id
   Datatype *setName(Datatype *ct,const string &n); 	///< Set the given types name
   void setDisplayFormat(Datatype *ct,uint4 format);	///< Set the display format associated with the given data-type
   void setFields(const vector<TypeField> &fd,TypeStruct *ot,int4 newSize,int4 newAlign,uint4 flags);	///< Set fields on a TypeStruct
@@ -892,7 +863,6 @@ public:
   void cacheCoreTypes(void);				///< Cache common types
   list<DatatypeWarning>::const_iterator beginWarnings(void) const { return warnings.begin(); }	///< Start of data-type warnings
   list<DatatypeWarning>::const_iterator endWarnings(void) const { return warnings.end(); }	///< End of data-type warnings
-  void resolveIncompleteTypedefs(void);		///< Redefine incomplete typedefs of data-types that are now complete
 #ifdef TYPEPROP_DEBUG
   static bool propagatedbg_on;		///< If \b true, display data-type propagation trace
 #endif
