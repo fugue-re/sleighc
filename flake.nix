@@ -32,7 +32,7 @@
         {
           default = pkgs.stdenv.mkDerivation {
             name = "sleighc";
-            version = "11.3";
+            version = "11.4.1";
             src = self;
             cmakeFlags = [
               "-DCMAKE_INSTALL_LIBDIR=lib"
