@@ -577,8 +577,10 @@ const string &Element::getAttributeValue(const string &nm) const
 DocumentStorage::~DocumentStorage(void)
 
 {
+  std::lock_guard<std::mutex> lock(DocumentStorage::parse_mutex);
+
   for(int4 i=0;i<doclist.size();++i) {
-    if (doclist[i] != (Document *)0)
+    if (doclist[i] != (Document *)0 && !doclist[i]->getShared())
       delete doclist[i];
   }
 }
@@ -594,12 +596,23 @@ Document *DocumentStorage::parseDocument(istream &s)
 Document *DocumentStorage::openDocument(const string &filename)
 
 {
-  ifstream s(filename.c_str());
-  if (!s)
-    throw DecoderError("Unable to open xml document "+filename);
-  Document *res = parseDocument(s);
-  s.close();
-  return res;
+  std::lock_guard<std::mutex> lock(DocumentStorage::parse_mutex);
+  auto ret = DocumentStorage::cache.insert(map<string, Document *>::value_type(filename, nullptr));
+
+  Document *res = ret.first->second;
+
+  if (ret.second || res == nullptr) {
+    ifstream s(filename.c_str());
+    if (!s) {
+      throw DecoderError("Unable to open xml document "+filename);
+    }
+    ret.first->second = parseDocument(s);
+    s.close();
+
+    ret.first->second->setShared();
+  }
+
+  return ret.first->second;
 }
 
 void DocumentStorage::registerTag(const Element *el)

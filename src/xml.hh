@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <mutex>
 
 namespace ghidra {
 
@@ -213,9 +214,13 @@ public:
 /// This is actually just an Element object itself, with the document's \e root element
 /// as its only child, which owns all the child documents below it in DOM the hierarchy.
 class Document : public Element {
+  bool shared = false;
 public:
   Document(void) : Element((Element *)0) {}	///< Construct an (empty) document
   Element *getRoot(void) const { return *children.begin(); }	///< Get the root Element of the document
+
+  void setShared(void) { shared = true; }
+  bool getShared(void) const { return shared; }
 };
 
 /// \brief A SAX interface implementation for constructing an in-memory DOM model.
@@ -256,6 +261,9 @@ public:
 /// or a filename via openDocument().  If they are explicitly registered, specific
 /// XML Elements can be looked up by name via getTag().
 class DocumentStorage {
+  inline static std::mutex parse_mutex;
+  inline static std::map<std::string, Document *> cache;
+
   vector<Document *> doclist;		///< The list of documents held by this container
   map<string,const Element *> tagmap;	///< The map from name to registered XML elements
 public:

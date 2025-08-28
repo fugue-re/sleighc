@@ -219,6 +219,8 @@ public:
     doc_parameter_declaration
   };
 private:
+  inline static std::mutex parse_mutex;
+
   Architecture *glb;
   map<string,uint4> keywords;
   GrammarLexer lexer;

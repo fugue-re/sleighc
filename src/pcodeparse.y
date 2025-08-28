@@ -15,6 +15,8 @@
  */
 %define api.prefix {pcode}
 %{
+#include <mutex>
+
 #include "pcodeparse.hh"
 
 //#define YYERROR_VERBOSE
@@ -770,6 +772,8 @@ int4 PcodeSnippet::lex(void)
  bool PcodeSnippet::parseStream(istream &s)
 
 {
+  std::lock_guard<std::mutex> guard(PcodeSnippet::parse_mutex);
+
   lexer.initialize(&s);
   pcode = this;			// Setup global object for yyparse
   int4 res = yyparse();

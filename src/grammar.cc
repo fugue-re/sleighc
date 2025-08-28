@@ -3091,6 +3091,8 @@ bool CParse::parseFile(const string &nm,uint4 doctype)
 bool CParse::parseStream(istream &s,uint4 doctype)
 
 {
+  std::lock_guard<std::mutex> lock(CParse::parse_mutex);
+
   clear();
 
   lexer.pushFile("stream",&s);

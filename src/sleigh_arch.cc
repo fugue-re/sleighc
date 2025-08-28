@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <memory>
+
 #include "sleigh_arch.hh"
 #include "inject_sleigh.hh"
 
@@ -33,7 +35,6 @@ ElementId ELEM_DESCRIPTION = ElementId("description",233);
 ElementId ELEM_LANGUAGE = ElementId("language",234);
 ElementId ELEM_LANGUAGE_DEFINITIONS = ElementId("language_definitions",235);
 
-map<int4,Sleigh> SleighArchitecture::translators;
 vector<LanguageDescription> SleighArchitecture::description;
 
 FileManage SleighArchitecture::specpaths; // Global specfile manager
@@ -66,7 +67,7 @@ void LanguageDescription::decode(Decoder &decoder)
   id = decoder.readString(ATTRIB_ID);
   deprecated = false;
   for(;;) {
-    uint4 attribId = decoder.getNextAttributeId();
+uint4 attribId = decoder.getNextAttributeId();
     if (attribId == 0) break;
     if (attribId==ATTRIB_DEPRECATED)
       deprecated = decoder.readBool();
@@ -168,22 +169,14 @@ string SleighArchitecture::getDescription(void) const
 bool SleighArchitecture::isTranslateReused(void)
 
 {
-  return (translators.find(languageindex) != translators.end());
+  return false;
 }
 
 Translate *SleighArchitecture::buildTranslator(DocumentStorage &store)
 
 {				// Build a sleigh translator
-  map<int4,Sleigh>::iterator iter;
-
-  iter = translators.find(languageindex);
-  if (iter != translators.end()) {
-    iter->second.reset(loader, context);
-    return &iter->second;
-  }
-  pair<map<int4,Sleigh>::iterator,bool> res;
-  res = translators.emplace(piecewise_construct,forward_as_tuple(languageindex),forward_as_tuple(loader,context));
-  return &(*res.first).second;
+  sleigh = std::unique_ptr<Sleigh>(new Sleigh(loader,context));
+  return sleigh.get();
 }
 
 PcodeInjectLibrary *SleighArchitecture::buildPcodeInjectLibrary(void)

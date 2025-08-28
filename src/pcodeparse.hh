@@ -16,6 +16,8 @@
 #ifndef __PCODEPARSE_HH__
 #define __PCODEPARSE_HH__
 
+#include <mutex>
+
 #include "pcodecompile.hh"
 #include "sleighbase.hh"
 
@@ -70,6 +72,8 @@ public:
 };
 
 class PcodeSnippet : public PcodeCompile {
+  inline static std::mutex parse_mutex;
+
   PcodeLexer lexer;
   const SleighBase *sleigh;	// Language from which we get symbols
   SymbolTree tree;		// Symbols in the local scope of the snippet  (temporaries)
